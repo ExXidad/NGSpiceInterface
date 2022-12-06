@@ -138,6 +138,11 @@ void NGSpiceInterface::run()
         }
         case Uploaded::Circuit:
         {
+            string rawString = "";
+            if (!_raw.empty())
+                for (const string &raw_el:_raw)
+                    rawString += raw_el + _delimiter;
+
             string optionsString = "";
             if (!_options.empty())
             {
@@ -151,7 +156,13 @@ void NGSpiceInterface::run()
                 for (const string &analysis:_analyses)
                     analysisString += analysis + _delimiter;
             }
-            string netlist = _circuit + _delimiter + optionsString + _delimiter + analysisString + _delimiter + ".end";
+            string netlist = (
+                    _circuit + _delimiter
+                    + rawString + _delimiter
+                    + optionsString + _delimiter
+                    + analysisString + _delimiter
+                    + ".end"
+            );
             loadNetlistFromString(netlist, _delimiter);
             _uploaded = Uploaded::Circuit;
             sendCommand("run");
@@ -338,4 +349,103 @@ Analyses &NGSpiceInterface::analyses()
 Analyses NGSpiceInterface::analyses() const
 {
     return _analyses;
+}
+
+StringVector &NGSpiceInterface::raw()
+{
+    return _raw;
+}
+
+StringVector NGSpiceInterface::raw() const
+{
+    return _raw;
+}
+
+string NGSpiceInterface::ACAnalysis(const string &variation, const uint nPtsPerVariation, const double fStart,
+                                    const double fStop,
+                                    const string &addon) const
+{
+    return (
+            ".ac "
+            + variation + " "
+            + std::to_string(nPtsPerVariation) + " "
+            + std::to_string(fStart) + " "
+            + std::to_string(fStop) + " "
+            + addon
+    );
+}
+
+void NGSpiceInterface::addACAnalysis(const string &variation, const uint nPtsPerVariation, const double fStart,
+                                     const double fStop,
+                                     const string &addon)
+{
+    _analyses.emplace_back(ACAnalysis(variation, nPtsPerVariation, fStart, fStop, addon));
+}
+
+StringVector NGSpiceInterface::currentPlotVectors()
+{
+    return plotVectors(ngSpice_CurPlot());
+}
+
+uint NGSpiceInterface::countElements(char **arr)
+{
+    uint n = 0;
+    while (arr[n] != nullptr)
+        ++n;
+    return n;
+}
+
+StringVector NGSpiceInterface::allPlots()
+{
+    char **tmp = ngSpice_AllPlots();
+    const uint n = countElements(tmp);
+
+    StringVector vectors(n);
+    for (int i = 0; i < n; ++i)
+        vectors[i] = tmp[i];
+
+    return vectors;
+}
+
+StringVector NGSpiceInterface::plotVectors(const string &plotName)
+{
+    char **tmp = ngSpice_AllVecs((char *) plotName.c_str());
+    const uint n = countElements(tmp);
+
+    StringVector vectors(n);
+    for (int i = 0; i < n; ++i)
+        vectors[i] = tmp[i];
+
+    return vectors;
+}
+
+void NGSpiceInterface::printSolutionInfo()
+{
+    for (const string &plotName: allPlots())
+    {
+        std::cout << "Plot name: " << plotName << std::endl;
+        std::cout << "Vectors: ";
+        for (const string &vecName: plotVectors(plotName))
+            std::cout << vecName << ", ";
+        std::cout << std::endl;
+    }
+}
+
+string NGSpiceInterface::DCAnalysis(const string &sourceName, const double vStart, const double vStop,
+                                    const double vStep, const string &addon) const
+{
+    return (
+            ".dc "
+            + sourceName + " "
+            + std::to_string(vStart) + " "
+            + std::to_string(vStop) + " "
+            + std::to_string(vStep)
+    );
+}
+
+void
+NGSpiceInterface::addDCAnalysis(const string &sourceName, const double vStart, const double vStop, const double vStep,
+                                const string &addon)
+{
+    _analyses.emplace_back(DCAnalysis(sourceName, vStart, vStop, vStep, addon));
 }

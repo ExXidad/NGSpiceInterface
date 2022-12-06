@@ -56,16 +56,20 @@ using complex = std::complex<double>;
 using ComplexVector = std::vector<complex>;
 using DoubleVector = std::vector<double>;
 using StringVector = std::vector<string>;
-using Options = std::map<string,string>;
+using Options = std::map<string, string>;
 using Analyses = StringVector;
 
 class NGSpiceInterface
 {
 private:
-    enum class Uploaded{Circuit, Netlist, None} _uploaded = Uploaded::None;
+    enum class Uploaded
+    {
+        Circuit, Netlist, None
+    } _uploaded = Uploaded::None;
     string _circuit, _delimiter;
     Options _options;
     Analyses _analyses;
+    StringVector _raw;
 
 public:
     NGSpiceInterface();
@@ -85,11 +89,30 @@ public:
     void loadCircuitFromString(const string &circuit, const string delimiter = "\n");
 
 public:
-    Options& options();
+    // Analyses
+    [[nodiscard]] string
+    DCAnalysis(const string &sourceName, const double vStart, const double vStop, const double vStep,
+               const string &addon = "") const;
+    void addDCAnalysis(const string &sourceName, const double vStart, const double vStop, const double vStep,
+                       const string &addon = "");
+
+
+    // variation: lin, dec, oct
+    [[nodiscard]] string
+    ACAnalysis(const string &variation, const uint nPtsPerVariation, const double fStart, const double fStop,
+               const string &addon = "") const;
+    void addACAnalysis(const string &variation, const uint nPtsPerVariation, const double fStart, const double fStop,
+                       const string &addon = "");
+
+public:
+    Options &options();
     [[nodiscard]] Options options() const;
 
-    Analyses& analyses();
+    Analyses &analyses();
     [[nodiscard]] Analyses analyses() const;
+
+    StringVector &raw();
+    [[nodiscard]] StringVector raw() const;
 
 public:
     // Commands
@@ -120,9 +143,17 @@ public:
 
     static int ngRunning(bool is_running, int id, void *user);
 
+public:
+    // Utils
+    StringVector currentPlotVectors();
+    StringVector allPlots();
+    StringVector plotVectors(const string &plotName);
+    void printSolutionInfo();
+
 private:
     // Utils
-    string readFileToString(const string &fname);
+    [[nodiscard]] string readFileToString(const string &fname);
+    [[nodiscard]] uint countElements(char **arr);
 };
 
 
