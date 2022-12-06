@@ -45,6 +45,9 @@
 #include "sharedspice.h"
 #include <vector>
 #include <complex>
+#include <fstream>
+#include <algorithm>
+#include <map>
 
 #define DEBUG
 
@@ -52,14 +55,18 @@ using string = std::string;
 using complex = std::complex<double>;
 using ComplexVector = std::vector<complex>;
 using DoubleVector = std::vector<double>;
-
-enum class State
-{
-    Idle, Running
-};
+using StringVector = std::vector<string>;
+using Options = std::map<string,string>;
+using Analyses = StringVector;
 
 class NGSpiceInterface
 {
+private:
+    enum class Uploaded{Circuit, Netlist, None} _uploaded = Uploaded::None;
+    string _circuit, _delimiter;
+    Options _options;
+    Analyses _analyses;
+
 public:
     NGSpiceInterface();
     ~NGSpiceInterface() = default;
@@ -71,6 +78,18 @@ public:
     void loadNetlistFromFile(const string &fname);
     void loadNetlistLineByLine(const string &line);
     void loadNetlistFromString(const string &netlist, const string delimiter = "\n");
+
+public:
+    // Circuits
+    void loadCircuitFromFile(const string &fname);
+    void loadCircuitFromString(const string &circuit, const string delimiter = "\n");
+
+public:
+    Options& options();
+    [[nodiscard]] Options options() const;
+
+    Analyses& analyses();
+    [[nodiscard]] Analyses analyses() const;
 
 public:
     // Commands
@@ -100,6 +119,10 @@ public:
     static int ngExit(int status, bool immediate, bool exit_upon_quit, int id, void *user);
 
     static int ngRunning(bool is_running, int id, void *user);
+
+private:
+    // Utils
+    string readFileToString(const string &fname);
 };
 
 

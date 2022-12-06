@@ -66,16 +66,19 @@ int NGSpiceInterface::init()
 
 void NGSpiceInterface::loadNetlistFromFile(const string &fname)
 {
+    _uploaded = Uploaded::Netlist;
     ngSpice_Command((char *) ("source " + fname).c_str());
 }
 
 void NGSpiceInterface::loadNetlistLineByLine(const string &line)
 {
+    _uploaded = Uploaded::Netlist;
     ngSpice_Command((char *) ("circbyline " + line).c_str());
 }
 
 void NGSpiceInterface::loadNetlistFromString(const string &netlist, const string delimiter)
 {
+    _uploaded = Uploaded::Netlist;
     // Parse
     auto start = 0U;
     auto end = netlist.find(delimiter);
@@ -121,7 +124,41 @@ void NGSpiceInterface::bgRun()
 
 void NGSpiceInterface::run()
 {
-    sendCommand("run");
+    switch (_uploaded)
+    {
+        case Uploaded::None:
+        {
+            throw std::runtime_error("Please specify a netlist!");
+            break;
+        }
+        case Uploaded::Netlist:
+        {
+            sendCommand("run");
+            break;
+        }
+        case Uploaded::Circuit:
+        {
+            string optionsString = "";
+            if (!_options.empty())
+            {
+                optionsString = ".options";
+                for (const auto &[option, value]:_options)
+                    optionsString += " " + option + "=" + value;
+            }
+            string analysisString = "";
+            if (!_analyses.empty())
+            {
+                for (const string &analysis:_analyses)
+                    analysisString += analysis + _delimiter;
+            }
+            string netlist = _circuit + _delimiter + optionsString + _delimiter + analysisString + _delimiter + ".end";
+            loadNetlistFromString(netlist, _delimiter);
+            _uploaded = Uploaded::Circuit;
+            sendCommand("run");
+            break;
+        }
+    }
+
 }
 
 void NGSpiceInterface::quit()
@@ -259,4 +296,46 @@ DoubleVector NGSpiceInterface::getPhasePlot(const string &name, int maxLen)
     }
 
     return data;
+}
+
+string NGSpiceInterface::readFileToString(const string &fname)
+{
+    std::ifstream file(fname);
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
+
+void NGSpiceInterface::loadCircuitFromFile(const string &fname)
+{
+    _uploaded = Uploaded::Circuit;
+    _circuit = readFileToString(fname);
+    _delimiter = "\n";
+}
+
+void NGSpiceInterface::loadCircuitFromString(const string &circuit, const string delimiter)
+{
+    _uploaded = Uploaded::Circuit;
+    _circuit = circuit;
+    _delimiter = delimiter;
+}
+
+Options &NGSpiceInterface::options()
+{
+    return _options;
+}
+
+Options NGSpiceInterface::options() const
+{
+    return _options;
+}
+
+Analyses &NGSpiceInterface::analyses()
+{
+    return _analyses;
+}
+
+Analyses NGSpiceInterface::analyses() const
+{
+    return _analyses;
 }

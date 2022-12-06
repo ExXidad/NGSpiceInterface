@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "NGSpiceInterface.hpp"
 #include "sharedspice.h"
+#include <fstream>
 
 using namespace std;
 
@@ -11,17 +12,23 @@ int main()
     NGSpiceInterface ngSpiceInterface;
 
 //    ngSpiceInterface.loadNetlistFromString("test array,V1 1 0 1,R1 1 2 1,C1 2 0 1 ic=0,.tran 10u 3 uic,.end", ",");
+    ngSpiceInterface.loadCircuitFromString("test array,V1 1 0 1,R1 1 2 1,C1 2 0 1 ic=0", ",");
+    ngSpiceInterface.options()["temp"] = "60";
+    ngSpiceInterface.analyses().emplace_back(".tran 10u 3 uic");
 
-    ngSpiceInterface.loadNetlistFromFile("/Users/xidad/CLionProjects/ngspice_test/testArray.cir");
+//    ngSpiceInterface.loadNetlistFromFile("/Users/xidad/CLionProjects/ngspice_test/testArray.cir");
 
     ngSpiceInterface.run();
 
 //    std::cout << ngSpice_AllVecs("time") << std::endl;
 
-    for (const auto x:ngSpiceInterface.getPlot("V(2)"))
-    {
-        std::cout <<x << std::endl;
-    }
+//    for (const auto x:ngSpiceInterface.getPlot("V(2)"))
+//    {
+//        std::cout <<x << std::endl;
+//    }
+
+
+
 
     return 0;
 }
