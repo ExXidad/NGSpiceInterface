@@ -57,7 +57,6 @@ using ComplexVector = std::vector<complex>;
 using DoubleVector = std::vector<double>;
 using StringVector = std::vector<string>;
 using Options = std::map<string, string>;
-using Analyses = StringVector;
 
 class NGSpiceInterface
 {
@@ -68,12 +67,13 @@ private:
     } _uploaded = Uploaded::None;
     string _circuit, _delimiter;
     Options _options;
-    Analyses _analyses;
+    StringVector _analyses;
     StringVector _raw;
+    StringVector _parameters;
 
 public:
     NGSpiceInterface();
-    ~NGSpiceInterface() = default;
+    ~NGSpiceInterface();
 
     int init();
 
@@ -90,11 +90,17 @@ public:
 
 public:
     // Analyses
+    void addAnalysis(const string &analysis);
+
     [[nodiscard]] string
     DCAnalysis(const string &sourceName, const double vStart, const double vStop, const double vStep,
                const string &addon = "") const;
     void addDCAnalysis(const string &sourceName, const double vStart, const double vStop, const double vStep,
                        const string &addon = "");
+
+    [[nodiscard]] string
+    transientAnalysis(const double tStart, const double tStop, const double tStep, const string &addon = "") const;
+    void addTransientAnalysis(const double tStart, const double tStop, const double tStep, const string &addon = "");
 
 
     // variation: lin, dec, oct
@@ -104,15 +110,34 @@ public:
     void addACAnalysis(const string &variation, const uint nPtsPerVariation, const double fStart, const double fStop,
                        const string &addon = "");
 
+    // variation: lin, dec, oct
+    [[nodiscard]] string
+    noiseAnalysis(const string &output, const string &ref,
+                  const string &source,
+                  const string &variation, const uint pts, const double fStart, const double fStop,
+                  const uint pointsPerSummary = 1,
+                  const string &addon = "") const;
+    void addNoiseAnalysis(const string &output, const string &ref,
+                          const string &source,
+                          const string &variation, const uint pts, const double fStart, const double fStop,
+                          const uint pointsPerSummary = 1,
+                          const string &addon = "");
+
+    [[nodiscard]] string OPAnalysis(const string &addon = "");
+    void addOPAnalysis(const string &addon = "");
+
 public:
     Options &options();
     [[nodiscard]] Options options() const;
 
-    Analyses &analyses();
-    [[nodiscard]] Analyses analyses() const;
+    StringVector &analyses();
+    [[nodiscard]] StringVector analyses() const;
 
     StringVector &raw();
     [[nodiscard]] StringVector raw() const;
+
+    StringVector &parameters();
+    [[nodiscard]] StringVector parameters() const;
 
 public:
     // Commands

@@ -150,16 +150,27 @@ void NGSpiceInterface::run()
                 for (const auto &[option, value]:_options)
                     optionsString += " " + option + "=" + value;
             }
+
+            string parametersString = "";
+            if (!_parameters.empty())
+            {
+                parametersString = ".param";
+                for (const auto &[param, value]:_options)
+                    parametersString += " " + param + "=" + value;
+            }
+
             string analysisString = "";
             if (!_analyses.empty())
             {
                 for (const string &analysis:_analyses)
                     analysisString += analysis + _delimiter;
             }
+
             string netlist = (
                     _circuit + _delimiter
                     + rawString + _delimiter
                     + optionsString + _delimiter
+                    + parametersString + _delimiter
                     + analysisString + _delimiter
                     + ".end"
             );
@@ -341,12 +352,12 @@ Options NGSpiceInterface::options() const
     return _options;
 }
 
-Analyses &NGSpiceInterface::analyses()
+StringVector &NGSpiceInterface::analyses()
 {
     return _analyses;
 }
 
-Analyses NGSpiceInterface::analyses() const
+StringVector NGSpiceInterface::analyses() const
 {
     return _analyses;
 }
@@ -379,7 +390,7 @@ void NGSpiceInterface::addACAnalysis(const string &variation, const uint nPtsPer
                                      const double fStop,
                                      const string &addon)
 {
-    _analyses.emplace_back(ACAnalysis(variation, nPtsPerVariation, fStart, fStop, addon));
+    addAnalysis(ACAnalysis(variation, nPtsPerVariation, fStart, fStop, addon));
 }
 
 StringVector NGSpiceInterface::currentPlotVectors()
@@ -447,5 +458,78 @@ void
 NGSpiceInterface::addDCAnalysis(const string &sourceName, const double vStart, const double vStop, const double vStep,
                                 const string &addon)
 {
-    _analyses.emplace_back(DCAnalysis(sourceName, vStart, vStop, vStep, addon));
+    addAnalysis(DCAnalysis(sourceName, vStart, vStop, vStep, addon));
+}
+
+void NGSpiceInterface::addAnalysis(const string &analysis)
+{
+    _analyses.emplace_back(analysis);
+}
+
+string NGSpiceInterface::noiseAnalysis(const string &output, const string &ref,
+                                       const string &source,
+                                       const string &variation, const uint pts, const double fStart, const double fStop,
+                                       const uint pointsPerSummary,
+                                       const string &addon) const
+{
+    return (
+            ".noise v(" + output + "," + ref + ") "
+            + source + " "
+            + variation + " "
+            + std::to_string(pts) + " "
+            + std::to_string(fStart) + " "
+            + std::to_string(fStop) + " "
+            + std::to_string(pointsPerSummary) + " "
+            + addon
+    );
+}
+
+void NGSpiceInterface::addNoiseAnalysis(const string &output, const string &ref, const string &source,
+                                        const string &variation, const uint pts, const double fStart,
+                                        const double fStop, const uint pointsPerSummary, const string &addon)
+{
+    addAnalysis(noiseAnalysis(output, ref, source, variation, pts, fStart, fStop, pointsPerSummary, addon));
+}
+
+string NGSpiceInterface::OPAnalysis(const string &addon)
+{
+    return ".op";
+}
+
+void NGSpiceInterface::addOPAnalysis(const string &addon)
+{
+    addAnalysis(OPAnalysis(addon));
+}
+
+StringVector NGSpiceInterface::parameters() const
+{
+    return _parameters;
+}
+
+StringVector &NGSpiceInterface::parameters()
+{
+    return _parameters;
+}
+
+string NGSpiceInterface::transientAnalysis(const double tStart, const double tStop, const double tStep,
+                                           const string &addon) const
+{
+    return (
+            ".tran "
+            + std::to_string(tStep) + " "
+            + std::to_string(tStop) + " "
+            + std::to_string(tStart) + " "
+            + addon
+    );
+}
+
+void
+NGSpiceInterface::addTransientAnalysis(const double tStart, const double tStop, const double tStep, const string &addon)
+{
+    addAnalysis(transientAnalysis(tStart, tStop, tStep, addon));
+}
+
+NGSpiceInterface::~NGSpiceInterface()
+{
+    quit();
 }
