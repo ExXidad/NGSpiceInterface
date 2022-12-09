@@ -1,0 +1,20 @@
+* Node Assignments
+*                       -
+*                       |   -
+*                       |   |    gnd
+*                       |   |    |   input
+*                       |   |    |   |   output
+*                       |   |    |   |   |
+*                       |   |    |   |   |
+.SUBCKT rcf                     33   50  45
+
+R1 50 45 1k
+C1 45 33 0.1u
+
+.ENDS rcf
+*
+*$
+
+
+
+

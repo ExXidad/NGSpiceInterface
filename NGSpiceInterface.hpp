@@ -70,12 +70,28 @@ private:
     StringVector _analyses;
     StringVector _raw;
     StringVector _parameters;
+    StringVector _includes;
+    StringVector _libs;
 
 public:
     NGSpiceInterface();
     ~NGSpiceInterface();
 
     int init();
+
+    int setExternalVoltageFunction(
+            int (*voltageFunction)(double *vReturn, double time, char *nodeName, int id, void *user)
+    );
+    int setExternalCurrentFunction(
+            int (*currentFunction)(double *iReturn, double time, char *nodeName, int id, void *user)
+    );
+    int setExternalVoltageAndCurrentFunctions(
+            int (*voltageFunction)(double *vReturn, double time, char *nodeName, int id, void *user),
+            int (*currentFunction)(double *iReturn, double time, char *nodeName, int id, void *user)
+    );
+    int setExternalFunctions(
+            GetVSRCData *voltageFunction, GetISRCData *currentFunction, GetSyncData *syncFunction,
+            int *id, void *user);
 
 public:
     // Netlists
@@ -127,6 +143,7 @@ public:
     void addOPAnalysis(const string &addon = "");
 
 public:
+    // Getters/Setters
     Options &options();
     [[nodiscard]] Options options() const;
 
@@ -161,11 +178,8 @@ public:
 public:
     // Callbacks
     static int receiveChar(char *what, int id, void *user);
-
     static int receiveStatus(char *what, int id, void *user);
-
     static int ngExit(int status, bool immediate, bool exit_upon_quit, int id, void *user);
-
     static int ngRunning(bool is_running, int id, void *user);
 
 public:
@@ -174,6 +188,9 @@ public:
     StringVector allPlots();
     StringVector plotVectors(const string &plotName);
     void printSolutionInfo();
+    void include(const string &path);
+    void includeLibrary(const string &path);
+
 
 private:
     // Utils

@@ -7,21 +7,46 @@ using namespace std;
 
 int testVoltage(double *vReturn, double time, char *nodeName, int id, void *user)
 {
-    (*vReturn) = 2. * std::sin(20.e3 * 2. * M_PI * time);
+    (*vReturn) = std::sin(10.e3 * 2. * M_PI * time) * 1e-3;
+    return 0;
+}
+
+int testCurrent(double *vReturn, double time, char *nodeName, int id, void *user)
+{
+    return 0;
+}
+
+int (testSync)(double actTime, double *delTime, double oldDelTime, int redostep, int id, int someId, void *user)
+{
+    (*delTime) = 0;
     return 0;
 }
 
 int main()
 {
     NGSpiceInterface ngSpiceInterface;
+    struct A{double a = 1;} B;
+    auto tmp = [](double *vReturn, double time, char *nodeName, int id, void *user) -> int {
+        (*vReturn) = std::sin(10.e3 * 2. * M_PI * time) * 1e-2;
+        return 0;
+    };
+
+    ngSpiceInterface.setExternalVoltageFunction(tmp);
+
+//    ngSpiceInterface.include("/Users/xidad/CLionProjects/ngspice_test/rcf.cir");
+    ngSpiceInterface.include("/Users/xidad/CLionProjects/ngspice_test/ad8655.cir");
+//    ngSpiceInterface.include("/Users/xidad/CLionProjects/ngspice_test/LM324.cir");
 
 //    ngSpiceInterface.loadNetlistFromString("test array,V1 1 0 1,R1 1 2 1,C1 2 0 1 ic=0,.tran 10u 3 uic,.end", ",");
-    ngSpiceInterface.loadCircuitFromString("test array,V1 1 0 SIN(0 1 10k),R1 1 2 1k,C1 2 0 1u", ",");
+//    ngSpiceInterface.loadCircuitFromString("test array,V1 1 0 SIN(0 1 10k),R1 1 2 1k,C1 2 0 1u", ",");
+//    ngSpiceInterface.loadCircuitFromString("test array,Vext 1 0 AC 0 EXTERNAL,R1 1 2 1k,C1 2 0 1u", ",");
+    ngSpiceInterface.loadCircuitFromFile("/Users/xidad/CLionProjects/ngspice_test/testCircuit.cir");
     ngSpiceInterface.options()["temp"] = "60";
-    ngSpiceInterface.addACAnalysis("dec", 10, 1., 10e9);
+//    ngSpiceInterface.addACAnalysis("dec", 10, 1., 10e9);
     ngSpiceInterface.addTransientAnalysis(0., 1.e-3, 1.e-6);
+    ngSpiceInterface.addNoiseAnalysis("5","0","Vext","dec",10,1.,100e6);
 
-//    ngSpiceInterface.loadNetlistFromFile("/Users/xidad/CLionProjects/ngspice_test/testArray.cir");
+//    ngSpiceInterface.loadNetlistFromFile("/Users/xidad/CLionProjects/ngspice_test/testCircuit.cir");
 
     ngSpiceInterface.run();
 
@@ -31,17 +56,48 @@ int main()
 //    DoubleVector mag = ngSpiceInterface.getMagPlot("V(2)");
 //    DoubleVector phase = ngSpiceInterface.getPhasePlot("V(2)");
 
+
     DoubleVector time = ngSpiceInterface.getRealPlot("tran1.time");
-    DoubleVector volt = ngSpiceInterface.getRealPlot("tran1.V(2)");
+    std::vector<DoubleVector> volts{
+            ngSpiceInterface.getRealPlot("tran1.V(6)"),
+            ngSpiceInterface.getRealPlot("tran1.V(5)")
+    };
+
 
     std::ofstream file("../test.txt");
-
-
-//    for (int i = 0; i < freq.size(); ++i)
-//        file << freq[i] << "\t" << mag[i] << "\t" << phase[i] << std::endl;
     for (int i = 0; i < time.size(); ++i)
-        file << time[i] << "\t" << volt[i] << std::endl;
-
+    {
+        file << time[i] << "\t";
+        for (int j = 0; j < volts.size(); ++j)
+        {
+            file << volts[j][i] << "\t";
+        }
+        file << std::endl;
+    }
     file.close();
+
+
+    DoubleVector freq = ngSpiceInterface.getRealPlot("noise1.frequency");
+    std::vector<DoubleVector> noise{
+            ngSpiceInterface.getRealPlot("noise1.inoise_spectrum"),
+            ngSpiceInterface.getRealPlot("noise1.onoise_spectrum")
+    };
+
+
+    file.open("../noise.txt");
+    for (int i = 0; i < freq.size(); ++i)
+    {
+        file << time[i] << "\t";
+        for (int j = 0; j < noise.size(); ++j)
+        {
+            file << noise[j][i] << "\t";
+        }
+        file << std::endl;
+    }
+    file.close();
+
+
+
+
     return 0;
 }

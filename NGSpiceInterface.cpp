@@ -161,21 +161,31 @@ void NGSpiceInterface::run()
 
             string analysisString = "";
             if (!_analyses.empty())
-            {
                 for (const string &analysis:_analyses)
                     analysisString += analysis + _delimiter;
-            }
 
-            string netlist = (
-                    _circuit + _delimiter
-                    + rawString + _delimiter
-                    + optionsString + _delimiter
-                    + parametersString + _delimiter
-                    + analysisString + _delimiter
-                    + ".end"
+            string includesString = "";
+            if (!_includes.empty())
+                for (const string &include:_includes)
+                    includesString += ".include " + include + _delimiter;
+
+            string libsString = "";
+            if (!_libs.empty())
+                for (const string &lib:_libs)
+                    includesString += ".lib " + lib + _delimiter;
+
+            string netlist = (""
+                              + _circuit + _delimiter
+                              + includesString + _delimiter
+                              + rawString + _delimiter
+                              + optionsString + _delimiter
+                              + parametersString + _delimiter
+                              + analysisString + _delimiter
+                              + ".end"
             );
             loadNetlistFromString(netlist, _delimiter);
             _uploaded = Uploaded::Circuit;
+
             sendCommand("run");
             break;
         }
@@ -331,8 +341,8 @@ string NGSpiceInterface::readFileToString(const string &fname)
 void NGSpiceInterface::loadCircuitFromFile(const string &fname)
 {
     _uploaded = Uploaded::Circuit;
-    _circuit = readFileToString(fname);
     _delimiter = "\n";
+    _circuit = readFileToString(fname);
 }
 
 void NGSpiceInterface::loadCircuitFromString(const string &circuit, const string delimiter)
@@ -432,6 +442,8 @@ StringVector NGSpiceInterface::plotVectors(const string &plotName)
 
 void NGSpiceInterface::printSolutionInfo()
 {
+    std::cout << "############### Solution info ###############" << std::endl;
+
     for (const string &plotName: allPlots())
     {
         std::cout << "Plot name: " << plotName << std::endl;
@@ -440,6 +452,8 @@ void NGSpiceInterface::printSolutionInfo()
             std::cout << vecName << ", ";
         std::cout << std::endl;
     }
+
+    std::cout << "#############################################" << std::endl;
 }
 
 string NGSpiceInterface::DCAnalysis(const string &sourceName, const double vStart, const double vStop,
@@ -532,4 +546,44 @@ NGSpiceInterface::addTransientAnalysis(const double tStart, const double tStop, 
 NGSpiceInterface::~NGSpiceInterface()
 {
     quit();
+}
+
+void NGSpiceInterface::include(const string &path)
+{
+    _includes.emplace_back(path);
+}
+
+void NGSpiceInterface::includeLibrary(const string &path)
+{
+    _libs.emplace_back(path);
+}
+
+int NGSpiceInterface::setExternalVoltageFunction(
+        int (*voltageFunction)(double *vReturn, double time, char *nodeName, int id, void *user)
+)
+{
+    return ngSpice_Init_Sync(voltageFunction, NULL, NULL, NULL, NULL);
+}
+
+int NGSpiceInterface::setExternalCurrentFunction(
+        int (*currentFunction)(double *iReturn, double time, char *nodeName, int id, void *user)
+)
+{
+    return ngSpice_Init_Sync(NULL, currentFunction, NULL, NULL, NULL);
+}
+
+int
+NGSpiceInterface::setExternalVoltageAndCurrentFunctions(
+        int (*voltageFunction)(double *vReturn, double time, char *nodeName, int id, void *user),
+        int (*currentFunction)(double *iReturn, double time, char *nodeName, int id, void *user)
+)
+{
+    return ngSpice_Init_Sync(voltageFunction, currentFunction, NULL, NULL, NULL);
+}
+
+int NGSpiceInterface::setExternalFunctions(GetVSRCData *voltageFunction, GetISRCData *currentFunction,
+                                           GetSyncData *syncFunction, int *id,
+                                           void *user)
+{
+    return ngSpice_Init_Sync(voltageFunction, currentFunction, syncFunction, id, user);
 }

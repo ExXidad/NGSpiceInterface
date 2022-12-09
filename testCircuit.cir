@@ -1,0 +1,10 @@
+*test circuit
+Vext 6 0 AC 0 EXTERNAL
+*Vin 6 0 SIN(0 1m 10k)
+Vpos 3 0 DC 3.3
+Vneg 0 4 DC 3.3
+R1 6 2 1k
+R2 2 5 10k
+*C1 2 0 1u
+R3 1 0 0
+Xopamp 1 2 3 4 5 ad8655

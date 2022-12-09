@@ -1,7 +1,0 @@
-test array
-V1 1 0 1
-R1 1 2 1
-C1 2 0 1 ic=0
-
-.tran 10u 3 uic
-.end
