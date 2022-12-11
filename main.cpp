@@ -27,7 +27,7 @@ int main()
     NGSpiceInterface ngSpiceInterface;
     struct A{double a = 1;} B;
     auto tmp = [](double *vReturn, double time, char *nodeName, int id, void *user) -> int {
-        (*vReturn) = std::sin(10.e3 * 2. * M_PI * time) * 1e-2;
+        (*vReturn) = std::sin(10.e3 * 2. * M_PI * time) * 1e-3;
         return 0;
     };
 
@@ -52,6 +52,9 @@ int main()
 
     ngSpiceInterface.printSolutionInfo();
 
+    ngSpiceInterface.sendCommand("destroy all");
+
+    ngSpiceInterface.printSolutionInfo();
 //    DoubleVector freq = ngSpiceInterface.getRealPlot("frequency");
 //    DoubleVector mag = ngSpiceInterface.getMagPlot("V(2)");
 //    DoubleVector phase = ngSpiceInterface.getPhasePlot("V(2)");

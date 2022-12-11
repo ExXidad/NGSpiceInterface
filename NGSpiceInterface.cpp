@@ -205,7 +205,7 @@ void NGSpiceInterface::bgResume()
 
 void NGSpiceInterface::clear()
 {
-    sendCommand(NULL);
+    sendCommand("destroy all");
 }
 
 ComplexVector NGSpiceInterface::getPlot(const string &name, int maxLen)
