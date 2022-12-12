@@ -49,8 +49,6 @@
 #include <algorithm>
 #include <map>
 
-#define DEBUG
-
 using string = std::string;
 using complex = std::complex<double>;
 using ComplexVector = std::vector<complex>;
