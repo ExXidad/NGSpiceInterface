@@ -1,10 +1,12 @@
 #include "NGSpiceInterface.hpp"
+#include <string.h>
+#include <cassert>
 
 int NGSpiceInterface::receiveChar(char *what, int id, void *user)
 {
     NGSpiceInterface *interfaceClass = reinterpret_cast<NGSpiceInterface *>(user);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     // strip stdout/stderr from the line
     if ((strncasecmp(what, "stdout ", 7) == 0)
         || (strncasecmp(what, "stderr ", 7) == 0))
@@ -19,7 +21,7 @@ int NGSpiceInterface::receiveStatus(char *what, int id, void *user)
 {
     NGSpiceInterface *interfaceClass = reinterpret_cast<NGSpiceInterface *>(user);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     std::cout << what << std::endl;
 #endif
 
@@ -28,7 +30,7 @@ int NGSpiceInterface::receiveStatus(char *what, int id, void *user)
 
 int NGSpiceInterface::ngExit(int status, bool immediate, bool exit_upon_quit, int id, void *user)
 {
-#ifdef DEBUG
+#ifNdef NDEBUG
     std::cout << "quit: " << status << std::endl;
     std::cout << "stat " << status << "; immed " << !!immediate << "; quit " << !!exit_upon_quit << std::endl;
 #endif
@@ -53,7 +55,7 @@ NGSpiceInterface::NGSpiceInterface()
 {
     int status = init();
 
-#ifdef DEBUG
+#ifndef NDEBUG
     std::cout << "Initialized NGSpice with code " << status << std::endl;
 #endif
 }

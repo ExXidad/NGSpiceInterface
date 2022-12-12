@@ -27,14 +27,17 @@ int main()
     NGSpiceInterface ngSpiceInterface;
     struct A{double a = 1;} B;
     auto tmp = [](double *vReturn, double time, char *nodeName, int id, void *user) -> int {
-        (*vReturn) = std::sin(10.e3 * 2. * M_PI * time) * 1e-3;
+        (*vReturn) = std::sin(10.e3 * 2. * M_PI * time) * 1e-6;
         return 0;
     };
 
-    ngSpiceInterface.setExternalVoltageFunction(tmp);
+//    ngSpiceInterface.setExternalVoltageFunction(tmp);
+    ngSpiceInterface.setExternalCurrentFunction(tmp);
 
 //    ngSpiceInterface.include("/Users/xidad/CLionProjects/ngspice_test/rcf.cir");
-    ngSpiceInterface.include("/Users/xidad/CLionProjects/ngspice_test/ad8655.cir");
+//    ngSpiceInterface.include("/Users/xidad/CLionProjects/ngspice_test/ad8655.cir");
+    ngSpiceInterface.include("/Users/xidad/CLionProjects/ngspice_test/tia.cir");
+    ngSpiceInterface.include("/Users/xidad/CLionProjects/ngspice_test/photodiode.cir");
 //    ngSpiceInterface.include("/Users/xidad/CLionProjects/ngspice_test/LM324.cir");
 
 //    ngSpiceInterface.loadNetlistFromString("test array,V1 1 0 1,R1 1 2 1,C1 2 0 1 ic=0,.tran 10u 3 uic,.end", ",");
@@ -44,15 +47,11 @@ int main()
     ngSpiceInterface.options()["temp"] = "60";
 //    ngSpiceInterface.addACAnalysis("dec", 10, 1., 10e9);
     ngSpiceInterface.addTransientAnalysis(0., 1.e-3, 1.e-6);
-    ngSpiceInterface.addNoiseAnalysis("5","0","Vext","dec",10,1.,100e6);
+    ngSpiceInterface.addNoiseAnalysis("3","0","ipd","dec",10,1.,100e6);
 
 //    ngSpiceInterface.loadNetlistFromFile("/Users/xidad/CLionProjects/ngspice_test/testCircuit.cir");
 
     ngSpiceInterface.run();
-
-    ngSpiceInterface.printSolutionInfo();
-
-    ngSpiceInterface.sendCommand("destroy all");
 
     ngSpiceInterface.printSolutionInfo();
 //    DoubleVector freq = ngSpiceInterface.getRealPlot("frequency");
@@ -62,8 +61,8 @@ int main()
 
     DoubleVector time = ngSpiceInterface.getRealPlot("tran1.time");
     std::vector<DoubleVector> volts{
-            ngSpiceInterface.getRealPlot("tran1.V(6)"),
-            ngSpiceInterface.getRealPlot("tran1.V(5)")
+            ngSpiceInterface.getRealPlot("tran1.V(1)"),
+            ngSpiceInterface.getRealPlot("tran1.V(3)")
     };
 
 
@@ -98,6 +97,13 @@ int main()
         file << std::endl;
     }
     file.close();
+
+    std::cout << "Total noise: " << std::endl;
+    std::cout << "In noise: " <<ngSpiceInterface.getRealPlot("noise2.inoise_total")[0] << std::endl;
+    std::cout << "Out noise: " <<ngSpiceInterface.getRealPlot("noise2.onoise_total")[0] << std::endl;
+    std::cout << std::endl;
+
+
 
 
 
