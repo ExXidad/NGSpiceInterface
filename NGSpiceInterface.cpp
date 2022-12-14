@@ -30,7 +30,7 @@ int NGSpiceInterface::receiveStatus(char *what, int id, void *user)
 
 int NGSpiceInterface::ngExit(int status, bool immediate, bool exit_upon_quit, int id, void *user)
 {
-#ifNdef NDEBUG
+#ifndef NDEBUG
     std::cout << "quit: " << status << std::endl;
     std::cout << "stat " << status << "; immed " << !!immediate << "; quit " << !!exit_upon_quit << std::endl;
 #endif
