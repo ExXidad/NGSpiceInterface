@@ -154,6 +154,9 @@ public:
     StringVector &parameters();
     [[nodiscard]] StringVector parameters() const;
 
+    string &circuit();
+    [[nodiscard]] string circuit() const;
+
 public:
     // Commands
     void sendCommand(const string &command);

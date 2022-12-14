@@ -589,3 +589,13 @@ int NGSpiceInterface::setExternalFunctions(GetVSRCData *voltageFunction, GetISRC
 {
     return ngSpice_Init_Sync(voltageFunction, currentFunction, syncFunction, id, user);
 }
+
+string &NGSpiceInterface::circuit()
+{
+    return _circuit;
+}
+
+string NGSpiceInterface::circuit() const
+{
+    return _circuit;
+}

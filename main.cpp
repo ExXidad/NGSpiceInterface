@@ -24,15 +24,33 @@ int (testSync)(double actTime, double *delTime, double oldDelTime, int redostep,
 
 int main()
 {
+    const double tmax = 1e-3;
+    const double tstep = tmax * 1e+10;
     NGSpiceInterface ngSpiceInterface;
-    struct A{double a = 1;} B;
+    std::vector<bool> bits{0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0};
+    std::vector<std::pair<double, double>> data;
+    data.reserve(bits.size());
+    const double bitTime = tmax / (bits.size() - 1);
+    for (int i = 0; i < bits.size(); ++i)
+        data.emplace_back(std::pair<double, double>{bitTime * i, bits[i] ? 1. : 0.});
+    std::cout << "Bit time: " << bitTime << "; Frequency: " << 1. / bitTime << std::endl;
+
     auto tmp = [](double *vReturn, double time, char *nodeName, int id, void *user) -> int {
-        (*vReturn) = std::sin(10.e3 * 2. * M_PI * time) * 1e-6;
+        auto *data = reinterpret_cast<std::vector<std::pair<double, double>> *>(user);
+        double val = 0.;
+        for (int i = 0; i < data->size(); ++i)
+            if (std::get<0>((*data)[i]) > time)
+            {
+                val = std::get<1>((*data)[i - 1]);
+                break;
+            }
+        (*vReturn) = val * 1e-6;
         return 0;
     };
 
 //    ngSpiceInterface.setExternalVoltageFunction(tmp);
-    ngSpiceInterface.setExternalCurrentFunction(tmp);
+//    ngSpiceInterface.setExternalCurrentFunction(tmp);
+    ngSpiceInterface.setExternalFunctions(tmp, nullptr, nullptr, nullptr, &data);
 
 //    ngSpiceInterface.include("/Users/xidad/CLionProjects/ngspice_test/rcf.cir");
 //    ngSpiceInterface.include("/Users/xidad/CLionProjects/ngspice_test/ad8655.cir");
@@ -46,8 +64,8 @@ int main()
     ngSpiceInterface.loadCircuitFromFile("/Users/xidad/CLionProjects/ngspice_test/testCircuit.cir");
     ngSpiceInterface.options()["temp"] = "60";
 //    ngSpiceInterface.addACAnalysis("dec", 10, 1., 10e9);
-    ngSpiceInterface.addTransientAnalysis(0., 1.e-3, 1.e-6);
-    ngSpiceInterface.addNoiseAnalysis("3","0","ipd","dec",10,1.,100e6);
+    ngSpiceInterface.addTransientAnalysis(0., tmax, tstep);
+    ngSpiceInterface.addNoiseAnalysis("3", "0", "vpdcont", "dec", 10, 1., 100e6);
 
 //    ngSpiceInterface.loadNetlistFromFile("/Users/xidad/CLionProjects/ngspice_test/testCircuit.cir");
 
@@ -61,9 +79,12 @@ int main()
 
     DoubleVector time = ngSpiceInterface.getRealPlot("tran1.time");
     std::vector<DoubleVector> volts{
+            ngSpiceInterface.getRealPlot("tran1.V(control)"),
             ngSpiceInterface.getRealPlot("tran1.V(1)"),
             ngSpiceInterface.getRealPlot("tran1.V(3)")
     };
+
+    std::cout << "Volts size: " << volts[0].size() << std::endl;
 
 
     std::ofstream file("../test.txt");
@@ -89,7 +110,7 @@ int main()
     file.open("../noise.txt");
     for (int i = 0; i < freq.size(); ++i)
     {
-        file << time[i] << "\t";
+        file << freq[i] << "\t";
         for (int j = 0; j < noise.size(); ++j)
         {
             file << noise[j][i] << "\t";
@@ -99,13 +120,9 @@ int main()
     file.close();
 
     std::cout << "Total noise: " << std::endl;
-    std::cout << "In noise: " <<ngSpiceInterface.getRealPlot("noise2.inoise_total")[0] << std::endl;
-    std::cout << "Out noise: " <<ngSpiceInterface.getRealPlot("noise2.onoise_total")[0] << std::endl;
+    std::cout << "In noise: " << ngSpiceInterface.getRealPlot("noise2.inoise_total")[0] << std::endl;
+    std::cout << "Out noise: " << ngSpiceInterface.getRealPlot("noise2.onoise_total")[0] << std::endl;
     std::cout << std::endl;
-
-
-
-
 
 
     return 0;

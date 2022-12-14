@@ -3,8 +3,9 @@
 *Vin 6 0 SIN(0 1m 10k)
 
 Vr Vr 0 AC 0 DC 15
-Xpd Vr 1 photodiode cj=15n id=10n rsh=10G rs=10
-Ipd Vr 1 AC EXTERNAL
+Xpd Vr 1 control photodiode cj=15p id=10p rsh=10G rs=10
+Vpdcont control 0 AC EXTERNAL
+
 
 Xtia1 1 2 tia rin=1n cin=1p rf=1k cf=1n rout=10 vp=5 vm=5
 Xtia2 2 3 tia rin=1k cin=1p rf=1k cf=1n rout=10 vp=5 vm=5
